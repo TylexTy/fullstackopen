@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, {useState, useEffect } from 'react'
 
-const Button = ({ country, setSearch }) => {
+const Button = ({ country, setSearch, key }) => {
 
 
   return (
@@ -9,29 +9,33 @@ const Button = ({ country, setSearch }) => {
   )
 }
 
-const Weather = ({country}) => {
-  const api_key = process.env.REACT_APP_API_KEY
+const Weather = ({location}) => { 
   const [weather, setWeather] = useState([])
+  const [load, setLoad] = useState(true)
   useEffect(() => {
+    const api_key = process.env.REACT_APP_API_KEY
     axios
-      .get(`http://api.openweathermap.org/data/2.5/weather?q=${country.capital}&appid=${api_key}`)
+      .get(`http://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=${api_key}`)
       .then(response => {
-        setWeather(response.data)
+        const weatherData = response.data
+        setWeather(weatherData)
+        setLoad(false)
       })
-  })
-  console.log(weather);
-  return (
+  }, [location])
+  console.log(weather)
 
+  if (load) return <p>fetching data!</p>
+  return (
     <div>
-      <p>Current Time: {weather.observation_time} </p>
-      <p>Current Temperature: {weather.temperature}</p>
-      <p>Feels like: {weather.feelslike}</p>
+      <p>temperature: {weather.main.temp} Celsius</p>
+      <p>Feels like: {weather.main.feels_like} Celsius</p>
+      <p>Weather: {weather.weather[0].description}</p>
     </div>
 
   )
 }
 
-const ToDisplay = ({filteredCountries, setSearch, setWeather, weather, api_key}) => {
+const ToDisplay = ({filteredCountries, setSearch}) => {
 
   if (filteredCountries.length === 1) {
     const countryToReturn = filteredCountries[0]
@@ -51,7 +55,7 @@ const ToDisplay = ({filteredCountries, setSearch, setWeather, weather, api_key})
           })}
         </ul>
         <img src={countryToReturn.flag} alt="country flag" width='300px' height='200px' />
-        <Weather country={countryToReturn} />
+        <Weather location={countryToReturn.capital} />
 
       </div>
     )
@@ -61,9 +65,7 @@ const ToDisplay = ({filteredCountries, setSearch, setWeather, weather, api_key})
     
     return filteredCountries.map(country => {
       return (
-        <div>
           <p key={country.name}>{country.name}<Button country={country} setSearch={setSearch}/></p>
-        </div>
         )
     })
   }
@@ -73,11 +75,8 @@ const App = () => {
 
   const [countries, setCountries] = useState([])
   const [search, setSearch] = useState('')
-  const api_key = process.env.REACT_APP_API_KEY
   const filteredCountries = countries.filter(country => country.name.toLowerCase().startsWith(search.toLowerCase()))
-  const countriesToReturn = filteredCountries.length > 10
-  ? 'Too many matches, specify another filter'
-  : filteredCountries.map(country => <p key={country.name}>{country.name}</p>)
+
   useEffect(() => {
     axios.get('https://restcountries.eu/rest/v2/all')
     .then(response => {
