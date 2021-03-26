@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+import personsService from './services/persons'
 
 const PersonForm = (props) => {
 
@@ -16,14 +16,39 @@ const PersonForm = (props) => {
   )
 }
 
-const Persons = ({persons, search}) => {
+const Button = ({personClicked, persons, setPersons}) => {
+
+  console.log(personClicked);
+
+  const handleButtonClick = () => {
+
+    window.confirm(`Delete ${personClicked.name}?`)
+    ?
+      useEffect(() => {
+        personsService
+        .remove(personClicked.id)
+        .then(
+          setPersons(persons.filter(person => person.id !== personClicked.id))
+        )
+        }, [])
+    :
+      alert(`${personClicked.name} kept in phonebook`)
+      
+  }
+
+  return (
+    <button value={personClicked} onClick={handleButtonClick}>delete</button>
+  )
+}
+
+const Persons = ({persons, search, setPersons}) => {
 
   const personsToShow = search === ""
     ? persons
     : persons.filter(person => person.name.toLowerCase().startsWith(search.toLowerCase()))
 
   return (
-    personsToShow.map(person => <p key={person.name}>{person.name} {person.number}</p>)
+    personsToShow.map(person => <p key={person.name}>{person.name} {person.number} <Button personClicked = {person} persons = {persons} setPersons={setPersons} /></p>)
   )
 }
 
@@ -42,10 +67,10 @@ const App = () => {
   const [ search, setSearch ] = useState('')
 
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data)
+    personsService
+      .getAll()
+      .then(initialPersons => {
+        setPersons(initialPersons)
       })
   }, [])
   
@@ -55,13 +80,18 @@ const App = () => {
       name: newName,
       number: newNum,
     }
-    persons.find(person => person.name === newName) 
-    ?
-    alert(`${newName} is already in the phonebook`)
-    :
-    setPersons(persons.concat(nameObject)) 
-    setNewName('')
-    setNewNum('')
+    personsService
+      .create(nameObject)
+      .then(returnedPerson => {
+        persons.find(person => person.name === newName) 
+        ?
+        alert(`${newName} is already in the phonebook`)
+        :
+        setPersons(persons.concat(nameObject)) 
+        setNewName('')
+        setNewNum('')
+      })
+    
   }
 
   const handleNameChange = (event) => {
@@ -84,7 +114,7 @@ const App = () => {
       <PersonForm addPerson={addPerson} newName={newName} newNum={newNum}
         handleNameChange={handleNameChange} handleNumChange={handleNumChange} />
       <h3>Numbers</h3>
-      <Persons persons={persons} search={search} />
+      <Persons persons={persons} search={search} setPersons={setPersons} />
     </div>
   )
 }
