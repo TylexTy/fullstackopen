@@ -18,37 +18,33 @@ const PersonForm = (props) => {
 
 const Button = ({personClicked, persons, setPersons}) => {
 
-  console.log(personClicked);
-
-  const handleButtonClick = () => {
+  const handleDeletion = (event) => {
+    event.preventDefault()
 
     window.confirm(`Delete ${personClicked.name}?`)
     ?
-      useEffect(() => {
-        personsService
-        .remove(personClicked.id)
-        .then(
-          setPersons(persons.filter(person => person.id !== personClicked.id))
-        )
-        }, [])
+      personsService.remove(personClicked.id)
+      .then(() => setPersons(persons.filter(person => person.id !== personClicked.id)))
     :
       alert(`${personClicked.name} kept in phonebook`)
       
+    
+
   }
 
   return (
-    <button value={personClicked} onClick={handleButtonClick}>delete</button>
+    <button type="submit" onClick={handleDeletion}>delete</button>
   )
 }
 
-const Persons = ({persons, search, setPersons}) => {
+const Persons = ({handleDeletion, persons, search, setPersons }) => {
 
   const personsToShow = search === ""
     ? persons
     : persons.filter(person => person.name.toLowerCase().startsWith(search.toLowerCase()))
 
   return (
-    personsToShow.map(person => <p key={person.name}>{person.name} {person.number} <Button personClicked = {person} persons = {persons} setPersons={setPersons} /></p>)
+    personsToShow.map(person => <p key={person.name}>{person.name} {person.number} <Button personClicked = {person} persons={persons} setPersons={setPersons}/></p>)
   )
 }
 
@@ -83,11 +79,11 @@ const App = () => {
     personsService
       .create(nameObject)
       .then(returnedPerson => {
-        persons.find(person => person.name === newName) 
+        persons.find(person => person.name === returnedPerson.name) 
         ?
-        alert(`${newName} is already in the phonebook`)
+        alert(`${returnedPerson.name} is already in the phonebook`)
         :
-        setPersons(persons.concat(nameObject)) 
+        setPersons(persons.concat(returnedPerson)) 
         setNewName('')
         setNewNum('')
       })
