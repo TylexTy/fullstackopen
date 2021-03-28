@@ -1,52 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import personsService from './services/persons'
-
-const PersonForm = (props) => {
-
-  return (
-    <div>
-      <form onSubmit={props.addPerson}>
-        <div>name: <input value={props.newName} onChange={props.handleNameChange} /></div>
-        <div>number: <input value={props.newNum} onChange={props.handleNumChange}/></div>
-        <div>
-          <button type="submit">add</button>
-        </div>
-      </form>
-    </div>
-  )
-}
-
-const Button = ({personClicked, persons, setPersons}) => {
-
-  const handleDeletion = (event) => {
-    event.preventDefault()
-
-    window.confirm(`Delete ${personClicked.name}?`)
-    ?
-      personsService.remove(personClicked.id)
-      .then(() => setPersons(persons.filter(person => person.id !== personClicked.id)))
-    :
-      alert(`${personClicked.name} kept in phonebook`)
-      
-    
-
-  }
-
-  return (
-    <button type="submit" onClick={handleDeletion}>delete</button>
-  )
-}
-
-const Persons = ({handleDeletion, persons, search, setPersons }) => {
-
-  const personsToShow = search === ""
-    ? persons
-    : persons.filter(person => person.name.toLowerCase().startsWith(search.toLowerCase()))
-
-  return (
-    personsToShow.map(person => <p key={person.name}>{person.name} {person.number} <Button personClicked = {person} persons={persons} setPersons={setPersons}/></p>)
-  )
-}
+import Persons from './components/Persons'
+import Notification from './components/Notification'
+import PersonForm from './components/PersonForm'
 
 const Filter = ({search, handleSearchChange}) => {
   
@@ -56,11 +12,14 @@ const Filter = ({search, handleSearchChange}) => {
 
 }
 
+
 const App = () => {
   const [ persons, setPersons ] = useState([])
   const [ newName, setNewName ] = useState('')
   const [ newNum, setNewNum ] = useState('')
   const [ search, setSearch ] = useState('')
+  const [notificationMessage, setNotificationMessage] = useState(null)
+  const [color, setColor] = useState('green')
 
   useEffect(() => {
     personsService
@@ -76,13 +35,42 @@ const App = () => {
       name: newName,
       number: newNum,
     }
-    personsService
+
+    const oldPerson = persons.find(person => person.name === nameObject.name)
+    console.log(oldPerson)
+    oldPerson
+    ? window.confirm(`${nameObject.name} is already in the phonebook, replace the old number with a new one?`)
+      ? personsService
+          .update(persons.find(person => person.name === nameObject.name).id, nameObject)
+          .then((returnedPerson)=> {
+            setNotificationMessage(
+              `${returnedPerson.name}'s number has been updated`
+            )
+            setTimeout(() => {
+              setNotificationMessage(null)
+            }, 5000)
+            setPersons(persons.filter(person => person.number !== oldPerson.number).concat(returnedPerson))
+            setNewName('')
+            setNewNum('')
+          })
+          .catch(error => {
+            setColor('red')
+            setNotificationMessage(`Information of ${nameObject.name} has already been removed from the server`)
+            setTimeout(() => {
+              setColor('green')
+              setNotificationMessage(null)
+            }, 5000)
+          })
+      : window.close()
+    : personsService
       .create(nameObject)
       .then(returnedPerson => {
-        persons.find(person => person.name === returnedPerson.name) 
-        ?
-        alert(`${returnedPerson.name} is already in the phonebook`)
-        :
+        setNotificationMessage(
+          `${returnedPerson.name} was successfully added to Phonebook`
+        )
+        setTimeout(() => {
+          setNotificationMessage(null)
+        }, 5000)
         setPersons(persons.concat(returnedPerson)) 
         setNewName('')
         setNewNum('')
@@ -105,6 +93,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notificationMessage} color={color}/>
       <Filter search={search} handleSearchChange={handleSearchChange} />
       <h3>Add a new</h3>
       <PersonForm addPerson={addPerson} newName={newName} newNum={newNum}
