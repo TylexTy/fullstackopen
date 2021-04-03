@@ -21,14 +21,17 @@ const Button = ({personClicked, persons, setPersons}) => {
   )
 }
 
-const Persons = ({handleDeletion, persons, search, setPersons }) => {
+const Persons = ({persons, search, setPersons }) => {
 
-    const personsToShow = search === ""
+  const personsToShow = search === ""
       ? persons
       : persons.filter(person => person.name.toLowerCase().startsWith(search.toLowerCase()))
   
+
     return (
-      personsToShow.map(person => <p key={person.name}>{person.name} {person.number} <Button personClicked = {person} persons={persons} setPersons={setPersons}/></p>)
+      <div>
+      {personsToShow.map(person => <p key={person.name}>{person.name} {person.number} <Button personClicked = {person} persons={persons} setPersons={setPersons}/></p>)}
+      </div>
     )
   }
 

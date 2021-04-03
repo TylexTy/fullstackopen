@@ -74,6 +74,14 @@ const App = () => {
         setPersons(persons.concat(returnedPerson)) 
         setNewName('')
         setNewNum('')
+      }).catch(error => {
+        setColor('red')
+        setNotificationMessage(
+          `${error.response.data.error}`
+        )
+        setTimeout(() => {
+          setNotificationMessage(null)
+        }, 5000)
       })
     
   }
